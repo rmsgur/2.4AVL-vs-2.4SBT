@@ -45,7 +45,7 @@ import org.hsqldb.types.Type;
  * Implementation of array aggregate operations
  *
  * @author Fred Toussi (fredt@users dot sourceforge.net)
- * @version 2.3.5
+ * @version 2.4.0
  * @since 2.0.1
  */
 public class ExpressionArrayAggregate extends Expression {

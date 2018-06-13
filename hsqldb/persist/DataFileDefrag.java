@@ -175,8 +175,8 @@ final class DataFileDefrag {
 
     long[] writeTableToDataFile(Table table) {
 
-        RowStoreAVLDisk store =
-            (RowStoreAVLDisk) table.database.persistentStoreCollection
+        RowStoreSBTDisk store =
+            (RowStoreSBTDisk) table.database.persistentStoreCollection
                 .getStore(table);
         long[] rootsArray = table.getIndexRootsArray();
 

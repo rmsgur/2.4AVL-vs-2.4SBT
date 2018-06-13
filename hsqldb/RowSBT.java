@@ -70,7 +70,7 @@
 
 package org.hsqldb;
 
-import org.hsqldb.index.NodeAVL;
+import org.hsqldb.index.NodeSBT;
 import org.hsqldb.lib.java.JavaSystem;
 import org.hsqldb.persist.PersistentStore;
 
@@ -82,7 +82,7 @@ import org.hsqldb.persist.PersistentStore;
  * Base class for a database row object implementing rows for
  * memory resident tables.<p>
  *
- * Subclass RowAVLDisk implements rows for CACHED and TEXT tables.<p>
+ * Subclass RowSBTDisk implements rows for CACHED and TEXT tables.<p>
  * New class derived from Hypersonic SQL code and enhanced in HSQLDB.<p>
  *
  * @author Fred Toussi (fredt@users dot sourceforge dot net)
@@ -90,22 +90,22 @@ import org.hsqldb.persist.PersistentStore;
  * @version 2.0.1
  * @since Hypersonic SQL
  */
-public class RowAVL extends Row {
+public class RowSBT extends Row {
 
-    public NodeAVL nPrimaryNode;
+    public NodeSBT nPrimaryNode;
 
     /**
      *  Default constructor used only in subclasses.
      */
-    protected RowAVL(TableBase table, Object[] data) {
+    protected RowSBT(TableBase table, Object[] data) {
         super(table, data);
     }
 
     /**
      *  Constructor for MEMORY table Row. The result is a Row with Nodes that
-     *  are not yet linked with other Nodes in the AVL indexes.
+     *  are not yet linked with other Nodes in the SBT indexes.
      */
-    public RowAVL(TableBase table, Object[] data, int position,
+    public RowSBT(TableBase table, Object[] data, int position,
                   PersistentStore store) {
 
         super(table, data);
@@ -119,12 +119,12 @@ public class RowAVL extends Row {
 
         int indexCount = store.getAccessorKeys().length;
 
-        nPrimaryNode = new NodeAVL(this);
+        nPrimaryNode = new NodeSBT(this);
 
-        NodeAVL n = nPrimaryNode;
+        NodeSBT n = nPrimaryNode;
 
         for (int i = 1; i < indexCount; i++) {
-            n.nNext = new NodeAVL(this);
+            n.nNext = new NodeSBT(this);
             n       = n.nNext;
         }
     }
@@ -133,9 +133,9 @@ public class RowAVL extends Row {
      * Returns the Node for a given Index, using the ordinal position of the
      * Index within the Table Object.
      */
-    public NodeAVL getNode(int index) {
+    public NodeSBT getNode(int index) {
 
-        NodeAVL n = nPrimaryNode;
+        NodeSBT n = nPrimaryNode;
 
         while (index-- > 0) {
             n = n.nNext;
@@ -148,7 +148,7 @@ public class RowAVL extends Row {
      *  Returns the Node for the next Index on this database row, given the
      *  Node for any Index.
      */
-    NodeAVL getNextNode(NodeAVL n) {
+    NodeSBT getNextNode(NodeSBT n) {
 
         if (n == null) {
             n = nPrimaryNode;
@@ -159,10 +159,10 @@ public class RowAVL extends Row {
         return n;
     }
 
-    public NodeAVL insertNode(int index) {
+    public NodeSBT insertNode(int index) {
 
-        NodeAVL backnode = getNode(index - 1);
-        NodeAVL newnode  = new NodeAVL(this);
+    	NodeSBT backnode = getNode(index - 1);
+    	NodeSBT newnode  = new NodeSBT(this);
 
         newnode.nNext  = backnode.nNext;
         backnode.nNext = newnode;
@@ -172,7 +172,7 @@ public class RowAVL extends Row {
 
     public void clearNonPrimaryNodes() {
 
-        NodeAVL n = nPrimaryNode.nNext;
+    	NodeSBT n = nPrimaryNode.nNext;
 
         while (n != null) {
             n.delete();
@@ -183,7 +183,7 @@ public class RowAVL extends Row {
 
     public void delete(PersistentStore store) {
 
-        NodeAVL n = nPrimaryNode;
+    	NodeSBT n = nPrimaryNode;
 
         while (n != null) {
             n.delete();
@@ -204,10 +204,10 @@ public class RowAVL extends Row {
 
         clearNonPrimaryNodes();
 
-        NodeAVL n = nPrimaryNode;
+        NodeSBT n = nPrimaryNode;
 
         while (n != null) {
-            NodeAVL last = n;
+        	NodeSBT last = n;
 
             n          = n.nNext;
             last.nNext = null;

@@ -40,7 +40,7 @@ import org.hsqldb.Database;
 import org.hsqldb.HsqlException;
 import org.hsqldb.OpTypes;
 import org.hsqldb.Row;
-import org.hsqldb.RowAVL;
+import org.hsqldb.RowSBT;
 import org.hsqldb.RowAction;
 import org.hsqldb.Session;
 import org.hsqldb.Table;
@@ -48,8 +48,8 @@ import org.hsqldb.TableBase;
 import org.hsqldb.error.Error;
 import org.hsqldb.error.ErrorCode;
 import org.hsqldb.index.Index;
-import org.hsqldb.index.IndexAVL;
-import org.hsqldb.index.NodeAVL;
+import org.hsqldb.index.IndexSBT;
+import org.hsqldb.index.NodeSBT;
 import org.hsqldb.lib.ArrayUtil;
 import org.hsqldb.navigator.RowIterator;
 import org.hsqldb.rowio.RowInputInterface;
@@ -60,10 +60,10 @@ import org.hsqldb.types.Type;
  * Base implementation of PersistentStore for different table types.
  *
  * @author Fred Toussi (fredt@users dot sourceforge.net)
- * @version 2.3.5
+ * @version 2.4.0
  * @since 1.9.0
  */
-public abstract class RowStoreAVL implements PersistentStore {
+public abstract class RowStoreSBT implements PersistentStore {
 
     Database          database;
     TableSpaceManager tableSpace;
@@ -124,7 +124,7 @@ public abstract class RowStoreAVL implements PersistentStore {
     }
 
     public int compare(Session session, long key) {
-        throw Error.runtimeError(ErrorCode.U_S0500, "RowStoreAVL");
+        throw Error.runtimeError(ErrorCode.U_S0500, "RowStoreSBT");
     }
 
     public abstract void add(Session session, CachedObject object, boolean tx);
@@ -154,11 +154,11 @@ public abstract class RowStoreAVL implements PersistentStore {
     }
 
     public CachedObject getNewInstance(int size) {
-        throw Error.runtimeError(ErrorCode.U_S0500, "RowStoreAVL");
+        throw Error.runtimeError(ErrorCode.U_S0500, "RowStoreSBT");
     }
 
     public int getDefaultObjectSize() {
-        throw Error.runtimeError(ErrorCode.U_S0500, "RowStoreAVL");
+        throw Error.runtimeError(ErrorCode.U_S0500, "RowStoreSBT");
     }
 
     public abstract CachedObject getNewCachedObject(Session session,
@@ -195,7 +195,7 @@ public abstract class RowStoreAVL implements PersistentStore {
         int position = key.getPosition();
 
         if (position >= accessorList.length) {
-            throw Error.runtimeError(ErrorCode.U_S0500, "RowStoreAVL");
+            throw Error.runtimeError(ErrorCode.U_S0500, "RowStoreSBT");
         }
 
         return accessorList[position];
@@ -312,7 +312,7 @@ public abstract class RowStoreAVL implements PersistentStore {
             while (it.next()) {
                 Row row = it.getCurrentRow();
 
-                ((RowAVL) row).clearNonPrimaryNodes();
+                ((RowSBT) row).clearNonPrimaryNodes();
 
                 for (int i = 1; i < indexList.length; i++) {
                     indexList[i].insert(session, this, row);
@@ -367,7 +367,7 @@ public abstract class RowStoreAVL implements PersistentStore {
         int            position     = 0;
 
         if (diff < -1) {
-            throw Error.runtimeError(ErrorCode.U_S0500, "RowStoreAVL");
+            throw Error.runtimeError(ErrorCode.U_S0500, "RowStoreSBT");
         } else if (diff == -1) {
             limit = keys.length;
         } else if (diff == 0) {
@@ -609,7 +609,7 @@ public abstract class RowStoreAVL implements PersistentStore {
             RowIterator it = table.rowIterator(this);
 
             while (it.next()) {
-                RowAVL row = (RowAVL) it.getCurrentRow();
+                RowSBT row = (RowSBT) it.getCurrentRow();
 
                 row.getNode(index.getPosition()).delete();
                 index.insert(session, this, row);
@@ -637,7 +637,7 @@ public abstract class RowStoreAVL implements PersistentStore {
         while (it.next()) {
             Row     row      = it.getCurrentRow();
             int     i        = position;
-            NodeAVL backnode = ((RowAVL) row).getNode(0);
+            NodeSBT backnode = ((RowSBT) row).getNode(0);
 
             while (i-- > 0) {
                 backnode = backnode.nNext;
@@ -664,7 +664,7 @@ public abstract class RowStoreAVL implements PersistentStore {
                 while (it.next()) {
                     Row row = it.getCurrentRow();
 
-                    ((RowAVL) row).insertNode(position);
+                    ((RowSBT) row).insertNode(position);
 
                     // count before inserting
                     rowCount++;
@@ -687,7 +687,7 @@ public abstract class RowStoreAVL implements PersistentStore {
 
             while (it.next()) {
                 Row     row      = it.getCurrentRow();
-                NodeAVL backnode = ((RowAVL) row).getNode(0);
+                NodeSBT backnode = ((RowSBT) row).getNode(0);
                 int     j        = position;
 
                 while (--j > 0) {
@@ -714,8 +714,8 @@ public abstract class RowStoreAVL implements PersistentStore {
             return;
         }
 
-        IndexAVL idx  = (IndexAVL) indexList[0];
-        NodeAVL  root = (NodeAVL) accessorList[0];
+        IndexSBT idx  = (IndexSBT) indexList[0];
+        NodeSBT  root = (NodeSBT) accessorList[0];
 
         idx.unlinkNodes(this, root);
     }

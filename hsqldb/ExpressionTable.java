@@ -46,7 +46,7 @@ import org.hsqldb.types.Type;
  * Implementation of table conversion.
  *
  * @author Fred Toussi (fredt@users dot sourceforge.net)
- * @version 2.3.5
+ * @version 2.4.0
  * @since 2.0.0
  */
 public class ExpressionTable extends Expression {

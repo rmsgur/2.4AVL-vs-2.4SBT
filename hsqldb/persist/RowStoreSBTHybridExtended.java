@@ -32,27 +32,27 @@
 package org.hsqldb.persist;
 
 import org.hsqldb.Row;
-import org.hsqldb.RowAVL;
+import org.hsqldb.RowSBT;
 import org.hsqldb.RowAction;
 import org.hsqldb.Session;
 import org.hsqldb.Table;
 import org.hsqldb.TableBase;
 import org.hsqldb.index.Index;
-import org.hsqldb.index.NodeAVL;
+import org.hsqldb.index.NodeSBT;
 import org.hsqldb.navigator.RowIterator;
 
 /*
  * Implementation of PersistentStore for information schema and temp tables.
  *
  * @author Fred Toussi (fredt@users dot sourceforge.net)
- * @version 2.3.5
+ * @version 2.4.0
  * @since 2.0.1
  */
-public class RowStoreAVLHybridExtended extends RowStoreAVLHybrid {
+public class RowStoreSBTHybridExtended extends RowStoreSBTHybrid {
 
     Session session;
 
-    public RowStoreAVLHybridExtended(Session session, TableBase table,
+    public RowStoreSBTHybridExtended(Session session, TableBase table,
                                      boolean diskBased) {
 
         super(session, table, diskBased);
@@ -82,7 +82,7 @@ public class RowStoreAVLHybridExtended extends RowStoreAVLHybrid {
 
     public void indexRow(Session session, Row row) {
 
-        NodeAVL node  = ((RowAVL) row).getNode(0);
+        NodeSBT node  = ((RowSBT) row).getNode(0);
         int     count = 0;
 
         while (node != null) {
@@ -103,7 +103,7 @@ public class RowStoreAVLHybridExtended extends RowStoreAVLHybrid {
      */
     public void delete(Session session, Row row) {
 
-        NodeAVL node  = ((RowAVL) row).getNode(0);
+        NodeSBT node  = ((RowSBT) row).getNode(0);
         int     count = 0;
 
         while (node != null) {
@@ -160,7 +160,7 @@ public class RowStoreAVLHybridExtended extends RowStoreAVLHybrid {
 
     private void resetAccessorKeysCached(Index[] keys) {
 
-        RowStoreAVLHybrid tempStore = new RowStoreAVLHybridExtended(session,
+        RowStoreSBTHybrid tempStore = new RowStoreSBTHybridExtended(session,
             table, true);
 
         tempStore.changeToDiskTable(session);

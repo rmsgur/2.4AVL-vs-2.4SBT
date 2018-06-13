@@ -50,7 +50,7 @@ import org.hsqldb.types.Type;
  * Implementation of column, variable, parameter, etc. access operations.
  *
  * @author Fred Toussi (fredt@users dot sourceforge.net)
- * @version 2.3.5
+ * @version 2.4.0
  * @since 1.9.0
  */
 public class ExpressionColumn extends Expression {
@@ -1120,7 +1120,7 @@ public class ExpressionColumn extends Expression {
     }
 
     /**
-     * SIMPLE_COLUMN expressions are now (2.3.5) always ExpressionColumn
+     * SIMPLE_COLUMN expressions are now (2.4.0) always ExpressionColumn
      */
     public boolean equals(Expression other) {
 

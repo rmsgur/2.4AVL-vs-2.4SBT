@@ -90,24 +90,17 @@ public class Testdb {
             return;                   // bye bye
         }
 
-        System.out.println("Start\n");
+        System.out.println("Start");
+        long total = 0;
         try {
-        	db.query("select * from region");
-			for(int i = 1995; i <= 1999; i++) {
-				System.out.println("Year: " + i + "\n");
-				for(int j = 1; j <= 12; j++) {
-					System.out.println("Month: " + j + " to " + (j+1));
-					long total = 0;
-					for(int k = 0; k < 10; k++) {
-						long start_time = System.currentTimeMillis();
-						System.out.println("select    100.00 * sum(case        when p_type like 'PROMO%'            then l_extendedprice * (1 - l_discount)        else 0    end) / sum(l_extendedprice * (1 - l_discount)) as promo_revenue from    lineitem,    part where    l_partkey = p_partkey    and l_shipdate >= date '" + i + "-" + j + "-01'    and l_shipdate < date '" + i + "-" + j + "-01' + interval '1' month;");
-						long end_time = System.currentTimeMillis();
-						System.out.println((end_time-start_time) + "ms");
-						total += (end_time-start_time);
-					}
-					System.out.println((total / 10) + "ms" + "\n\n");
-				}
-			}
+        	for(int i = 0; i < 10; i++) {
+        		long start_time = System.currentTimeMillis();
+            	db.query("select    100.00 * sum(case        when p_type like 'PROMO%'            then l_extendedprice * (1 - l_discount)        else 0    end) / sum(l_extendedprice * (1 - l_discount)) as promo_revenue from    lineitem,    part where    l_partkey = p_partkey    and l_shipdate >= date '1995-07-01'    and l_shipdate < date '1995-07-01' + interval '1' month;");
+            	long end_time = System.currentTimeMillis();
+            	System.out.println((end_time-start_time) + "ms");
+            	total += (end_time-start_time);
+        	}
+        	System.out.println((total / 10) + "ms");
         	
         } catch (SQLException ex3) {
             ex3.printStackTrace();

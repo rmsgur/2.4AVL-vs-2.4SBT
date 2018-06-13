@@ -44,7 +44,7 @@ import org.hsqldb.result.ResultProperties;
  * Base class for compiled statement objects.<p>
  *
  * @author Fred Toussi (fredt@users dot sourceforge.net)
- * @version 2.3.5
+ * @version 2.4.0
  * @since 1.9.0
  */
 public abstract class Statement {

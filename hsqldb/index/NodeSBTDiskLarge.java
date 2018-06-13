@@ -33,8 +33,8 @@ package org.hsqldb.index;
 
 import java.io.IOException;
 
-import org.hsqldb.RowAVL;
-import org.hsqldb.RowAVLDisk;
+import org.hsqldb.RowSBT;
+import org.hsqldb.RowSBTDisk;
 import org.hsqldb.Table;
 import org.hsqldb.lib.LongLookup;
 import org.hsqldb.persist.PersistentStore;
@@ -42,12 +42,12 @@ import org.hsqldb.rowio.RowInputInterface;
 import org.hsqldb.rowio.RowOutputInterface;
 
 /**
- *  Subclass of NodeAVL for huge databases.
+ *  Subclass of NodeSBT for huge databases.
  * @author Fred Toussi (fredt@users dot sourceforge dot net)
  * @version 2.3.4
  * @since 2.2.9
  */
-public class NodeAVLDiskLarge extends NodeAVL {
+public class NodeSBTDiskLarge extends NodeSBT {
 
     private long            iLeft   = NO_POS;
     private long            iRight  = NO_POS;
@@ -55,7 +55,7 @@ public class NodeAVLDiskLarge extends NodeAVL {
     private int             iId;    // id of Index object for this Node
     public static final int SIZE_IN_BYTE = 4 * 4;
 
-    public NodeAVLDiskLarge(RowAVLDisk r, RowInputInterface in,
+    public NodeSBTDiskLarge(RowSBTDisk r, RowInputInterface in,
                             int id) throws IOException {
 
         super(r);
@@ -88,7 +88,7 @@ public class NodeAVLDiskLarge extends NodeAVL {
         }
     }
 
-    public NodeAVLDiskLarge(RowAVLDisk r, int id) {
+    public NodeSBTDiskLarge(RowSBTDisk r, int id) {
 
         super(r);
 
@@ -102,7 +102,7 @@ public class NodeAVLDiskLarge extends NodeAVL {
         iParent  = NO_POS;
         iBalance = 0;
 
-        ((RowAVLDisk) row).setNodesChanged();
+        ((RowSBTDisk) row).setNodesChanged();
     }
 
     public boolean isInMemory() {
@@ -117,21 +117,21 @@ public class NodeAVLDiskLarge extends NodeAVL {
         return row.getPos();
     }
 
-    public RowAVL getRow(PersistentStore store) {
-        return (RowAVLDisk) store.get(this.row, false);
+    public RowSBT getRow(PersistentStore store) {
+        return (RowSBTDisk) store.get(this.row, false);
     }
 
     public Object[] getData(PersistentStore store) {
         return row.getData();
     }
 
-    private NodeAVLDiskLarge findNode(PersistentStore store) {
+    private NodeSBTDiskLarge findNode(PersistentStore store) {
 
         if (row.isInMemory()) {
             return this;
         }
 
-        RowAVLDisk r = (RowAVLDisk) store.get(row.getPos(), false);
+        RowSBTDisk r = (RowSBTDisk) store.get(row.getPos(), false);
 
         if (r == null) {
             String tableName = "";
@@ -140,30 +140,30 @@ public class NodeAVLDiskLarge extends NodeAVL {
                 tableName = ((Table) row.getTable()).getName().name;
             }
 
-            store.getCache().logSevereEvent(tableName + " NodeAVLDiskLarge "
+            store.getCache().logSevereEvent(tableName + " NodeSBTDiskLarge "
                                             + row.getPos(), null);
 
             return this;
         }
 
-        return (NodeAVLDiskLarge) r.getNode(iId);
+        return (NodeSBTDiskLarge) r.getNode(iId);
     }
 
-    private NodeAVLDiskLarge findNode(PersistentStore store, long pos) {
+    private NodeSBTDiskLarge findNode(PersistentStore store, long pos) {
 
-        NodeAVLDiskLarge ret = null;
-        RowAVLDisk       r   = (RowAVLDisk) store.get(pos, false);
+        NodeSBTDiskLarge ret = null;
+        RowSBTDisk       r   = (RowSBTDisk) store.get(pos, false);
 
         if (r != null) {
-            ret = (NodeAVLDiskLarge) r.getNode(iId);
+            ret = (NodeSBTDiskLarge) r.getNode(iId);
         }
 
         return ret;
     }
 
-    boolean isLeft(PersistentStore store, NodeAVL n) {
+    boolean isLeft(PersistentStore store, NodeSBT n) {
 
-        NodeAVLDiskLarge node = findNode(store);
+        NodeSBTDiskLarge node = findNode(store);
 
         if (n == null) {
             return node.iLeft == NO_POS;
@@ -172,9 +172,9 @@ public class NodeAVLDiskLarge extends NodeAVL {
         return node.iLeft == n.getPos();
     }
 
-    boolean isRight(PersistentStore store, NodeAVL n) {
+    boolean isRight(PersistentStore store, NodeSBT n) {
 
-        NodeAVLDiskLarge node = findNode(store);
+        NodeSBTDiskLarge node = findNode(store);
 
         if (n == null) {
             return node.iRight == NO_POS;
@@ -183,9 +183,9 @@ public class NodeAVLDiskLarge extends NodeAVL {
         return node.iRight == n.getPos();
     }
 
-    NodeAVL getLeft(PersistentStore store) {
+    NodeSBT getLeft(PersistentStore store) {
 
-        NodeAVLDiskLarge node = findNode(store);
+        NodeSBTDiskLarge node = findNode(store);
 
         if (node.iLeft == NO_POS) {
             return null;
@@ -194,9 +194,9 @@ public class NodeAVLDiskLarge extends NodeAVL {
         return findNode(store, node.iLeft);
     }
 
-    NodeAVL getRight(PersistentStore store) {
+    NodeSBT getRight(PersistentStore store) {
 
-        NodeAVLDiskLarge node = findNode(store);
+        NodeSBTDiskLarge node = findNode(store);
 
         if (node.iRight == NO_POS) {
             return null;
@@ -205,9 +205,9 @@ public class NodeAVLDiskLarge extends NodeAVL {
         return findNode(store, node.iRight);
     }
 
-    NodeAVL getParent(PersistentStore store) {
+    NodeSBT getParent(PersistentStore store) {
 
-        NodeAVLDiskLarge node = findNode(store);
+        NodeSBTDiskLarge node = findNode(store);
 
         if (node.iParent == NO_POS) {
             return null;
@@ -218,40 +218,40 @@ public class NodeAVLDiskLarge extends NodeAVL {
 
     public int getBalance(PersistentStore store) {
 
-        NodeAVLDiskLarge node = findNode(store);
+        NodeSBTDiskLarge node = findNode(store);
 
         return node.iBalance;
     }
 
     boolean isRoot(PersistentStore store) {
 
-        NodeAVLDiskLarge node = findNode(store);
+        NodeSBTDiskLarge node = findNode(store);
 
         return node.iParent == NO_POS;
     }
 
     boolean isFromLeft(PersistentStore store) {
 
-        NodeAVLDiskLarge node = findNode(store);
+        NodeSBTDiskLarge node = findNode(store);
 
         if (node.iParent == NO_POS) {
             return true;
         }
 
-        NodeAVLDiskLarge temp = findNode(store, iParent);
+        NodeSBTDiskLarge temp = findNode(store, iParent);
 
         return row.getPos() == temp.iLeft;
     }
 
-    public NodeAVL child(PersistentStore store, boolean isleft) {
+    public NodeSBT child(PersistentStore store, boolean isleft) {
         return isleft ? getLeft(store)
                       : getRight(store);
     }
 
-    NodeAVL setParent(PersistentStore store, NodeAVL n) {
+    NodeSBT setParent(PersistentStore store, NodeSBT n) {
 
-        RowAVLDisk       row  = (RowAVLDisk) store.get(this.row, true);
-        NodeAVLDiskLarge node = (NodeAVLDiskLarge) row.getNode(iId);
+        RowSBTDisk       row  = (RowSBTDisk) store.get(this.row, true);
+        NodeSBTDiskLarge node = (NodeSBTDiskLarge) row.getNode(iId);
 
         row.setNodesChanged();
 
@@ -263,10 +263,10 @@ public class NodeAVLDiskLarge extends NodeAVL {
         return node;
     }
 
-    public NodeAVL setBalance(PersistentStore store, int b) {
+    public NodeSBT setBalance(PersistentStore store, int b) {
 
-        RowAVLDisk       row  = (RowAVLDisk) store.get(this.row, true);
-        NodeAVLDiskLarge node = (NodeAVLDiskLarge) row.getNode(iId);
+        RowSBTDisk       row  = (RowSBTDisk) store.get(this.row, true);
+        NodeSBTDiskLarge node = (NodeSBTDiskLarge) row.getNode(iId);
 
         row.setNodesChanged();
 
@@ -277,10 +277,10 @@ public class NodeAVLDiskLarge extends NodeAVL {
         return node;
     }
 
-    NodeAVL setLeft(PersistentStore store, NodeAVL n) {
+    NodeSBT setLeft(PersistentStore store, NodeSBT n) {
 
-        RowAVLDisk       row  = (RowAVLDisk) store.get(this.row, true);
-        NodeAVLDiskLarge node = (NodeAVLDiskLarge) row.getNode(iId);
+        RowSBTDisk       row  = (RowSBTDisk) store.get(this.row, true);
+        NodeSBTDiskLarge node = (NodeSBTDiskLarge) row.getNode(iId);
 
         node.iLeft = n == null ? NO_POS
                                : n.getPos();
@@ -291,10 +291,10 @@ public class NodeAVLDiskLarge extends NodeAVL {
         return node;
     }
 
-    NodeAVL setRight(PersistentStore store, NodeAVL n) {
+    NodeSBT setRight(PersistentStore store, NodeSBT n) {
 
-        RowAVLDisk       row  = (RowAVLDisk) store.get(this.row, true);
-        NodeAVLDiskLarge node = (NodeAVLDiskLarge) row.getNode(iId);
+        RowSBTDisk       row  = (RowSBTDisk) store.get(this.row, true);
+        NodeSBTDiskLarge node = (NodeSBTDiskLarge) row.getNode(iId);
 
         node.iRight = n == null ? NO_POS
                                 : n.getPos();
@@ -305,9 +305,9 @@ public class NodeAVLDiskLarge extends NodeAVL {
         return node;
     }
 
-    public NodeAVL set(PersistentStore store, boolean isLeft, NodeAVL n) {
+    public NodeSBT set(PersistentStore store, boolean isLeft, NodeSBT n) {
 
-        NodeAVL x;
+        NodeSBT x;
 
         if (isLeft) {
             x = setLeft(store, n);
@@ -322,9 +322,9 @@ public class NodeAVLDiskLarge extends NodeAVL {
         return x;
     }
 
-    public void replace(PersistentStore store, Index index, NodeAVL n) {
+    public void replace(PersistentStore store, Index index, NodeSBT n) {
 
-        NodeAVLDiskLarge node = findNode(store);
+        NodeSBTDiskLarge node = findNode(store);
 
         if (node.iParent == NO_POS) {
             if (n != null) {
@@ -339,9 +339,9 @@ public class NodeAVLDiskLarge extends NodeAVL {
         }
     }
 
-    boolean equals(NodeAVL n) {
+    boolean equals(NodeSBT n) {
 
-        if (n instanceof NodeAVLDiskLarge) {
+        if (n instanceof NodeSBTDiskLarge) {
             return this == n || row.getPos() == n.getPos();
         }
 
@@ -349,7 +349,7 @@ public class NodeAVLDiskLarge extends NodeAVL {
     }
 
     public int getRealSize(RowOutputInterface out) {
-        return NodeAVLDiskLarge.SIZE_IN_BYTE;
+        return NodeSBTDiskLarge.SIZE_IN_BYTE;
     }
 
     public void setInMemory(boolean in) {}
@@ -385,7 +385,7 @@ public class NodeAVLDiskLarge extends NodeAVL {
 
         long newPointer = 0;
 
-        if (pointer != NodeAVL.NO_POS) {
+        if (pointer != NodeSBT.NO_POS) {
             if (lookup == null) {
                 newPointer = pointer;
             } else {

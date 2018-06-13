@@ -161,8 +161,8 @@ public class HsqlDatabaseProperties extends HsqlProperties {
 */
 
 //#else
-    public static final String THIS_VERSION      = "2.3.5";
-    public static final String THIS_FULL_VERSION = "2.3.5";
+    public static final String THIS_VERSION      = "2.4.0";
+    public static final String THIS_FULL_VERSION = "2.4.0";
     public static final int    MAJOR             = 2,
                                MINOR             = 3,
                                REVISION          = 5;

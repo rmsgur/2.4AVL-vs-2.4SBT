@@ -31,39 +31,37 @@
 
 package org.hsqldb.persist;
 
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReadWriteLock;
+import java.io.IOException;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-import org.hsqldb.Database;
+import org.hsqldb.HsqlException;
 import org.hsqldb.Row;
-import org.hsqldb.RowAVL;
+import org.hsqldb.RowSBT;
+import org.hsqldb.RowSBTDiskData;
 import org.hsqldb.RowAction;
 import org.hsqldb.Session;
 import org.hsqldb.Table;
 import org.hsqldb.TransactionManager;
 import org.hsqldb.error.Error;
 import org.hsqldb.error.ErrorCode;
+import org.hsqldb.index.Index;
 import org.hsqldb.lib.ArrayUtil;
 import org.hsqldb.rowio.RowInputInterface;
+import org.hsqldb.rowio.RowOutputInterface;
 
 /*
- * Implementation of PersistentStore for MEMORY tables.
+ * Implementation of PersistentStore for TEXT tables.
  *
  * @author Fred Toussi (fredt@users dot sourceforge.net)
- * @version 2.3.5
+ * @version 2.3.4
  * @since 1.9.0
  */
-public class RowStoreAVLMemory extends RowStoreAVL implements PersistentStore {
+public class RowStoreSBTDiskData extends RowStoreSBT {
 
-    Database      database;
-    AtomicInteger rowIdSequence = new AtomicInteger();
-    ReadWriteLock lock;
-    Lock          readLock;
-    Lock          writeLock;
+    DataFileCache      cache;
+    RowOutputInterface rowOut;
 
-    public RowStoreAVLMemory(Table table) {
+    public RowStoreSBTDiskData(Table table) {
 
         this.database     = table.database;
         this.table        = table;
@@ -74,60 +72,136 @@ public class RowStoreAVLMemory extends RowStoreAVL implements PersistentStore {
         writeLock         = lock.writeLock();
     }
 
-    public boolean isMemory() {
-        return true;
+    public Object[] getData(RowSBTDiskData row) {
+
+        cache.writeLock.lock();
+
+        try {
+            cache.get(row, this, false);
+
+            return row.getData();
+        } finally {
+            cache.writeLock.unlock();
+        }
     }
 
-    public int getAccessCount() {
-        return 0;
-    }
+    public CachedObject get(long key, boolean keep) {
 
-    public void set(CachedObject object) {}
+        CachedObject object = cache.get(key, this, keep);
 
-    public CachedObject get(long i) {
-        throw Error.runtimeError(ErrorCode.U_S0500, "RowStoreAVMemory");
-    }
-
-    public CachedObject get(long i, boolean keep) {
-        throw Error.runtimeError(ErrorCode.U_S0500, "RowStoreAVLMemory");
-    }
-
-    public CachedObject get(CachedObject object, boolean keep) {
         return object;
     }
 
-    public void add(Session session, CachedObject object, boolean tx) {}
+    public CachedObject get(CachedObject object, boolean keep) {
+
+        object = cache.get(object, this, keep);
+
+        return object;
+    }
+
+    public void add(Session session, CachedObject object, boolean tx) {
+
+        cache.writeLock.lock();
+
+        try {
+            int size = object.getRealSize(cache.rowOut);
+
+            object.setStorageSize(size);
+
+            long pos = tableSpace.getFilePosition(size, false);
+
+            object.setPos(pos);
+
+            if (tx) {
+                RowAction.addInsertAction(session, table, (Row) object);
+            }
+
+            cache.add(object, false);
+        } finally {
+            cache.writeLock.unlock();
+        }
+    }
 
     public CachedObject get(RowInputInterface in) {
-        throw Error.runtimeError(ErrorCode.U_S0500, "RowStoreAVLMemory");
+
+        try {
+            RowSBTDiskData row = new RowSBTDiskData(this, table, in);
+
+            row.setPos(in.getFilePosition());
+            row.setStorageSize(in.getSize());
+            row.setChanged(false);
+            ((TextCache) cache).addInit(row);
+
+            return row;
+        } catch (IOException e) {
+            throw Error.error(ErrorCode.TEXT_FILE_IO, e);
+        }
+    }
+
+    public CachedObject get(CachedObject object, RowInputInterface in) {
+
+        Object[] rowData = in.readData(table.getColumnTypes());
+
+        ((RowSBTDiskData) object).setData(rowData);
+
+        return object;
     }
 
     public CachedObject getNewCachedObject(Session session, Object object,
                                            boolean tx) {
 
-        int id  = rowIdSequence.getAndIncrement();
-        Row row = new RowAVL(table, (Object[]) object, id, this);
+        Row row = new RowSBTDiskData(this, table, (Object[]) object);
 
-        if (tx) {
-            RowAction.addInsertAction(session, table, row);
-        }
+        add(session, row, tx);
 
         return row;
+    }
+
+    public void indexRow(Session session, Row row) {
+        super.indexRow(session, row);
+    }
+
+    public boolean isMemory() {
+        return false;
+    }
+
+    public void set(CachedObject object) {}
+
+    public CachedObject get(long key) {
+
+        CachedObject object = cache.get(key, this, false);
+
+        return object;
     }
 
     public void removeAll() {
 
         destroy();
-        setTimestamp(0);
         elementCount.set(0);
         ArrayUtil.fillArray(accessorList, null);
     }
 
-    public void remove(CachedObject object) {}
+    public void remove(CachedObject object) {
+        cache.remove(object);
+    }
 
-    public void release(long i) {}
+    public CachedObject getAccessor(Index key) {
 
-    public void commitPersistence(CachedObject row) {}
+        int position = key.getPosition();
+
+        if (position >= accessorList.length) {
+            throw Error.runtimeError(ErrorCode.U_S0500, "RowStoreSBT");
+        }
+
+        return accessorList[position];
+    }
+
+    public void commitPersistence(CachedObject row) {
+
+        try {
+            cache.saveRow(row);
+        } catch (HsqlException e1) {}
+    }
 
     public void postCommitAction(Session session, RowAction action) {
 
@@ -137,30 +211,37 @@ public class RowStoreAVLMemory extends RowStoreAVL implements PersistentStore {
 
             Row row = action.getRow();
 
+            if (row == null) {
+                row = (Row) get(action.getPos(), false);
+            }
+
             delete(session, row);
+            remove(row);
         }
     }
 
     public void commitRow(Session session, Row row, int changeAction,
                           int txModel) {
 
-        Object[] data = row.getData();
-
         switch (changeAction) {
 
             case RowAction.ACTION_DELETE :
-                database.logger.writeDeleteStatement(session, (Table) table,
-                                                     data);
+                cache.removePersistence(row);
                 break;
 
             case RowAction.ACTION_INSERT :
-                database.logger.writeInsertStatement(session, row,
-                                                     (Table) table);
+                commitPersistence(row);
                 break;
 
             case RowAction.ACTION_INSERT_DELETE :
 
                 // INSERT + DELETE
+                if (txModel == TransactionManager.LOCKS) {
+                    remove(row);
+                } else {
+                    delete(session, row);
+                    remove(row);
+                }
                 break;
 
             case RowAction.ACTION_DELETE_FINAL :
@@ -175,14 +256,16 @@ public class RowStoreAVLMemory extends RowStoreAVL implements PersistentStore {
 
             case RowAction.ACTION_DELETE :
                 if (txModel == TransactionManager.LOCKS) {
-                    ((RowAVL) row).setNewNodes(this);
+                    ((RowSBT) row).setNewNodes(this);
                     indexRow(session, row);
                 }
                 break;
 
             case RowAction.ACTION_INSERT :
-                delete(session, row);
-                remove(row);
+                if (txModel == TransactionManager.LOCKS) {
+                    delete(session, row);
+                    remove(row);
+                }
                 break;
 
             case RowAction.ACTION_INSERT_DELETE :
@@ -198,18 +281,27 @@ public class RowStoreAVLMemory extends RowStoreAVL implements PersistentStore {
         }
     }
 
-    //
     public DataFileCache getCache() {
-        return null;
+        return cache;
     }
 
-    public void setCache(DataFileCache cache) {}
+    public void setCache(DataFileCache cache) {
 
+        this.cache = cache;
+        this.tableSpace =
+            cache.spaceManager.getTableSpace(DataSpaceManager.tableIdDefault);
+    }
+
+    /**
+     * Does not adjust usage count
+     */
     public void release() {
 
         destroy();
-        setTimestamp(0);
-        elementCount.set(0);
+        table.database.logger.textTableManager.closeTextCache((Table) table);
+
+        cache = null;
+
         ArrayUtil.fillArray(accessorList, null);
     }
 

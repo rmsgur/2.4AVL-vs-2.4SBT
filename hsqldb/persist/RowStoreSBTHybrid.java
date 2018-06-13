@@ -35,17 +35,17 @@ import java.io.IOException;
 
 import org.hsqldb.HsqlException;
 import org.hsqldb.Row;
-import org.hsqldb.RowAVL;
-import org.hsqldb.RowAVLDisk;
+import org.hsqldb.RowSBT;
+import org.hsqldb.RowSBTDisk;
 import org.hsqldb.RowAction;
 import org.hsqldb.Session;
 import org.hsqldb.TableBase;
 import org.hsqldb.error.Error;
 import org.hsqldb.error.ErrorCode;
 import org.hsqldb.index.Index;
-import org.hsqldb.index.IndexAVL;
-import org.hsqldb.index.NodeAVL;
-import org.hsqldb.index.NodeAVLDisk;
+import org.hsqldb.index.IndexSBT;
+import org.hsqldb.index.NodeSBT;
+import org.hsqldb.index.NodeSBTDisk;
 import org.hsqldb.lib.ArrayUtil;
 import org.hsqldb.navigator.RowIterator;
 import org.hsqldb.rowio.RowInputInterface;
@@ -57,7 +57,7 @@ import org.hsqldb.rowio.RowInputInterface;
  * @version 2.3.5
  * @since 1.9.0
  */
-public class RowStoreAVLHybrid extends RowStoreAVL implements PersistentStore {
+public class RowStoreSBTHybrid extends RowStoreSBT implements PersistentStore {
 
     DataFileCache   cache;
     private int     maxMemoryRowCount;
@@ -65,7 +65,7 @@ public class RowStoreAVLHybrid extends RowStoreAVL implements PersistentStore {
     boolean         isCached;
     int             rowIdSequence = 0;
 
-    public RowStoreAVLHybrid(Session session, TableBase table,
+    public RowStoreSBTHybrid(Session session, TableBase table,
                              boolean diskBased) {
 
         this.table             = table;
@@ -111,7 +111,7 @@ public class RowStoreAVLHybrid extends RowStoreAVL implements PersistentStore {
                 return cache.get(i, this, false);
             } else {
                 throw Error.runtimeError(ErrorCode.U_S0500,
-                                         "RowStoreAVLHybrid");
+                                         "RowStoreSBTHybrid");
             }
         } catch (HsqlException e) {
             return null;
@@ -125,7 +125,7 @@ public class RowStoreAVLHybrid extends RowStoreAVL implements PersistentStore {
                 return cache.get(i, this, keep);
             } else {
                 throw Error.runtimeError(ErrorCode.U_S0500,
-                                         "RowStoreAVLHybrid");
+                                         "RowStoreSBTHybrid");
             }
         } catch (HsqlException e) {
             return null;
@@ -150,7 +150,7 @@ public class RowStoreAVLHybrid extends RowStoreAVL implements PersistentStore {
         if (isCached) {
             int size = object.getRealSize(cache.rowOut);
 
-            size += indexList.length * NodeAVLDisk.SIZE_IN_BYTE;
+            size += indexList.length * NodeSBTDisk.SIZE_IN_BYTE;
             size = cache.rowOut.getStorageSize(size);
 
             object.setStorageSize(size);
@@ -174,7 +174,7 @@ public class RowStoreAVLHybrid extends RowStoreAVL implements PersistentStore {
 
         try {
             if (isCached) {
-                return new RowAVLDisk(this, in);
+                return new RowSBTDisk(this, in);
             }
         } catch (HsqlException e) {
             return null;
@@ -197,11 +197,11 @@ public class RowStoreAVLHybrid extends RowStoreAVL implements PersistentStore {
         Row row;
 
         if (isCached) {
-            row = new RowAVLDisk(table, (Object[]) object, this);
+            row = new RowSBTDisk(table, (Object[]) object, this);
         } else {
             int id = rowIdSequence++;
 
-            row = new RowAVL(table, (Object[]) object, id, this);
+            row = new RowSBT(table, (Object[]) object, id, this);
         }
 
         add(session, row, tx);
@@ -278,7 +278,7 @@ public class RowStoreAVLHybrid extends RowStoreAVL implements PersistentStore {
             case RowAction.ACTION_DELETE :
                 row = (Row) get(row, true);
 
-                ((RowAVL) row).setNewNodes(this);
+                ((RowSBT) row).setNewNodes(this);
                 row.keepInMemory(false);
                 indexRow(session, row);
                 break;
@@ -302,7 +302,7 @@ public class RowStoreAVLHybrid extends RowStoreAVL implements PersistentStore {
     }
 
     public void setCache(DataFileCache cache) {
-        throw Error.runtimeError(ErrorCode.U_S0500, "RowStoreAVLHybrid");
+        throw Error.runtimeError(ErrorCode.U_S0500, "RowStoreSBTHybrid");
     }
 
     public void release() {
@@ -325,13 +325,13 @@ public class RowStoreAVLHybrid extends RowStoreAVL implements PersistentStore {
     public CachedObject getAccessor(Index key) {
 
         int     position = key.getPosition();
-        NodeAVL node     = (NodeAVL) accessorList[position];
+        NodeSBT node     = (NodeSBT) accessorList[position];
 
         if (node == null) {
             return null;
         }
 
-        RowAVL row = (RowAVL) get(node.getRow(this), false);
+        RowSBT row = (RowSBT) get(node.getRow(this), false);
 
         node                            = row.getNode(key.getPosition());
         accessorList[key.getPosition()] = node;
@@ -349,7 +349,7 @@ public class RowStoreAVLHybrid extends RowStoreAVL implements PersistentStore {
         }
 
         if (isCached) {
-            throw Error.runtimeError(ErrorCode.U_S0500, "RowStoreAVLHybrid");
+            throw Error.runtimeError(ErrorCode.U_S0500, "RowStoreSBTHybrid");
         }
 
         super.resetAccessorKeys(session, keys);
@@ -380,8 +380,8 @@ public class RowStoreAVLHybrid extends RowStoreAVL implements PersistentStore {
             return;
         }
 
-        IndexAVL    idx      = (IndexAVL) indexList[0];
-        NodeAVL     root     = (NodeAVL) accessorList[0];
+        IndexSBT    idx      = (IndexSBT) indexList[0];
+        NodeSBT     root     = (NodeSBT) accessorList[0];
         RowIterator iterator = table.rowIterator(this);
 
         ArrayUtil.fillArray(accessorList, null);

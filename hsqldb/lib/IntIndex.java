@@ -38,7 +38,7 @@ package org.hsqldb.lib;
  * containing a matching key, or  or -1 if not found.<p>
  *
  * @author Fred Toussi (fredt@users dot sourceforge.net)
- * @version 2.3.5
+ * @version 2.4.0
  * @since 2.3.3
  */
 public class IntIndex {

@@ -58,8 +58,8 @@ import org.hsqldb.TransactionManagerMVCC;
 import org.hsqldb.error.Error;
 import org.hsqldb.error.ErrorCode;
 import org.hsqldb.index.Index;
-import org.hsqldb.index.IndexAVL;
-import org.hsqldb.index.IndexAVLMemory;
+import org.hsqldb.index.IndexSBT;
+import org.hsqldb.index.IndexSBTMemory;
 import org.hsqldb.lib.ArrayUtil;
 import org.hsqldb.lib.FileAccess;
 import org.hsqldb.lib.FileUtil;
@@ -88,7 +88,7 @@ import org.hsqldb.types.Type;
  *  storage.<p>
  *
  * @author Fred Toussi (fredt@users dot sourceforge.net)
- * @version 2.3.5
+ * @version 2.4.0
  * @since 1.7.0
  */
 public class Logger implements EventLogInterface {
@@ -1444,20 +1444,20 @@ public class Logger implements EventLogInterface {
                     break;
                 }
 
-                return new RowStoreAVLDisk(cache, (Table) table);
+                return new RowStoreSBTDisk(cache, (Table) table);
 
             case TableBase.MEMORY_TABLE :
             case TableBase.SYSTEM_TABLE :
-                return new RowStoreAVLMemory((Table) table);
+                return new RowStoreSBTMemory((Table) table);
 
             case TableBase.TEXT_TABLE :
-                return new RowStoreAVLDiskData((Table) table);
+                return new RowStoreSBTDiskData((Table) table);
 
             case TableBase.INFO_SCHEMA_TABLE :
-                return new RowStoreAVLHybridExtended(session, table, false);
+                return new RowStoreSBTHybridExtended(session, table, false);
 
             case TableBase.TEMP_TABLE :
-                return new RowStoreAVLHybridExtended(session, table, true);
+                return new RowStoreSBTHybridExtended(session, table, true);
 
             case TableBase.CHANGE_SET_TABLE :
                 return new RowStoreDataChange(session, table);
@@ -1471,7 +1471,7 @@ public class Logger implements EventLogInterface {
                     return null;
                 }
 
-                return new RowStoreAVLHybrid(session, table, true);
+                return new RowStoreSBTHybrid(session, table, true);
         }
 
         throw Error.runtimeError(ErrorCode.U_S0500, "Logger");
@@ -1488,7 +1488,7 @@ public class Logger implements EventLogInterface {
             case TableBase.INFO_SCHEMA_TABLE :
             case TableBase.SYSTEM_TABLE :
             case TableBase.MEMORY_TABLE :
-                return new IndexAVLMemory(name, id, table, columns,
+                return new IndexSBTMemory(name, id, table, columns,
                                           descending, nullsLast, colTypes, pk,
                                           unique, constraint, forward);
 
@@ -1501,7 +1501,7 @@ public class Logger implements EventLogInterface {
             case TableBase.SYSTEM_SUBQUERY :
             case TableBase.VIEW_TABLE :
             case TableBase.TRANSITION_TABLE :
-                return new IndexAVL(name, id, table, columns, descending,
+                return new IndexSBT(name, id, table, columns, descending,
                                     nullsLast, colTypes, pk, unique,
                                     constraint, forward);
         }

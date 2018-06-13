@@ -44,10 +44,10 @@ import org.hsqldb.rowio.RowInputInterface;
  * Implementation of PersistentStore for data change lists.
  *
  * @author Fred Toussi (fredt@users dot sourceforge.net)
- * @version 2.3.5
+ * @version 2.4.0
  * @since 2.2.7
  */
-public class RowStoreDataChange extends RowStoreAVLHybrid {
+public class RowStoreDataChange extends RowStoreSBTHybrid {
 
     Session session;
 

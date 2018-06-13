@@ -71,8 +71,8 @@
 package org.hsqldb.index;
 
 import org.hsqldb.Row;
-import org.hsqldb.RowAVL;
-import org.hsqldb.RowAVLDisk;
+import org.hsqldb.RowSBT;
+import org.hsqldb.RowSBTDisk;
 import org.hsqldb.lib.LongLookup;
 import org.hsqldb.persist.CachedObject;
 import org.hsqldb.persist.PersistentStore;
@@ -85,9 +85,9 @@ import org.hsqldb.rowio.RowInputInterface;
 // fredt@users 20021215 - doc 1.7.2 - javadoc comments
 
 /**
- *  The parent for all AVL node implementations. Subclasses of Node vary
+ *  The parent for all SBT node implementations. Subclasses of Node vary
  *  in the way they hold
- *  references to other Nodes in the AVL tree, or to their Row data.<br>
+ *  references to other Nodes in the SBT tree, or to their Row data.<br>
  *
  *  nNext links the Node objects belonging to different indexes for each
  *  table row. It is used solely by Row to locate the node belonging to a
@@ -100,23 +100,23 @@ import org.hsqldb.rowio.RowInputInterface;
  * @version 2.3.3
  * @since Hypersonic SQL
  */
-public class NodeAVL implements CachedObject {
+public class NodeSBT implements CachedObject {
 
-    static final int NO_POS = RowAVLDisk.NO_POS;
+    static final int NO_POS = RowSBTDisk.NO_POS;
     public int       iBalance;
-    public NodeAVL   nNext;    // node of next index (nNext==null || nNext.iId=iId+1)
+    public NodeSBT   nNext;    // node of next index (nNext==null || nNext.iId=iId+1)
 
     //
-    protected NodeAVL   nLeft;
-    protected NodeAVL   nRight;
-    protected NodeAVL   nParent;
+    protected NodeSBT   nLeft;
+    protected NodeSBT   nRight;
+    protected NodeSBT   nParent;
     protected final Row row;
 
-    NodeAVL() {
+    NodeSBT() {
         row = null;
     }
 
-    public NodeAVL(Row r) {
+    public NodeSBT(Row r) {
         row = r;
     }
 
@@ -125,11 +125,11 @@ public class NodeAVL implements CachedObject {
         nLeft    = nRight = nParent = null;
     }
 
-    NodeAVL getLeft(PersistentStore store) {
+    NodeSBT getLeft(PersistentStore store) {
         return nLeft;
     }
 
-    NodeAVL setLeft(PersistentStore persistentStore, NodeAVL n) {
+    NodeSBT setLeft(PersistentStore persistentStore, NodeSBT n) {
 
         nLeft = n;
 
@@ -140,26 +140,26 @@ public class NodeAVL implements CachedObject {
         return iBalance;
     }
 
-    boolean isLeft(PersistentStore store, NodeAVL node) {
+    boolean isLeft(PersistentStore store, NodeSBT node) {
         return nLeft == node;
     }
 
-    boolean isRight(PersistentStore store, NodeAVL node) {
+    boolean isRight(PersistentStore store, NodeSBT node) {
         return nRight == node;
     }
 
-    NodeAVL getRight(PersistentStore persistentStore) {
+    NodeSBT getRight(PersistentStore persistentStore) {
         return nRight;
     }
 
-    NodeAVL setRight(PersistentStore persistentStore, NodeAVL n) {
+    NodeSBT setRight(PersistentStore persistentStore, NodeSBT n) {
 
         nRight = n;
 
         return this;
     }
 
-    NodeAVL getParent(PersistentStore store) {
+    NodeSBT getParent(PersistentStore store) {
         return nParent;
     }
 
@@ -167,14 +167,14 @@ public class NodeAVL implements CachedObject {
         return nParent == null;
     }
 
-    NodeAVL setParent(PersistentStore persistentStore, NodeAVL n) {
+    NodeSBT setParent(PersistentStore persistentStore, NodeSBT n) {
 
         nParent = n;
 
         return this;
     }
 
-    public NodeAVL setBalance(PersistentStore store, int b) {
+    public NodeSBT setBalance(PersistentStore store, int b) {
 
         iBalance = b;
 
@@ -190,12 +190,12 @@ public class NodeAVL implements CachedObject {
         return this == nParent.nLeft;
     }
 
-    public NodeAVL child(PersistentStore store, boolean isleft) {
+    public NodeSBT child(PersistentStore store, boolean isleft) {
         return isleft ? getLeft(store)
                       : getRight(store);
     }
 
-    public NodeAVL set(PersistentStore store, boolean isLeft, NodeAVL n) {
+    public NodeSBT set(PersistentStore store, boolean isLeft, NodeSBT n) {
 
         if (isLeft) {
             nLeft = n;
@@ -210,7 +210,7 @@ public class NodeAVL implements CachedObject {
         return this;
     }
 
-    public void replace(PersistentStore store, Index index, NodeAVL n) {
+    public void replace(PersistentStore store, Index index, NodeSBT n) {
 
         if (nParent == null) {
             if (n != null) {
@@ -223,7 +223,7 @@ public class NodeAVL implements CachedObject {
         }
     }
 
-    boolean equals(NodeAVL n) {
+    boolean equals(NodeSBT n) {
         return n == this;
     }
 
@@ -243,8 +243,8 @@ public class NodeAVL implements CachedObject {
         return 0;
     }
 
-    public RowAVL getRow(PersistentStore store) {
-        return (RowAVL) row;
+    public RowSBT getRow(PersistentStore store) {
+        return (RowSBT) row;
     }
 
     protected Object[] getData(PersistentStore store) {

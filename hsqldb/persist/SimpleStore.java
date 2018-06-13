@@ -43,7 +43,7 @@ import org.hsqldb.rowio.RowInputInterface;
 
 /**
  * @author Fred Toussi (fredt@users dot sourceforge.net)
- * @version 2.3.5
+ * @version 2.4.0
  * @since 2.3.0
  */
 public abstract class SimpleStore implements PersistentStore {
